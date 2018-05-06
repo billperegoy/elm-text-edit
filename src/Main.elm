@@ -142,15 +142,10 @@ update msg model =
                     List.map (addLink decodedResult) model.data
 
                 newState =
-                    case model.selectionState of
-                        NothingSelected ->
-                            NothingSelected
-
-                        Selecting ->
-                            Selecting
-
-                        SelectionDone ->
-                            NothingSelected
+                    if model.selectionState == SelectionDone then
+                        NothingSelected
+                    else
+                        model.selectionState
             in
                 { model
                     | data = newData
@@ -182,11 +177,14 @@ addLinkText result data =
         dataValue =
             Tuple.second data
     in
-        ( Tuple.first data
-        , String.slice 0 result.startOffset dataValue
-            ++ "LINK"
-            ++ String.slice result.endOffset (String.length dataValue) dataValue
-        )
+        if result.startOffset == result.endOffset then
+            data
+        else
+            ( Tuple.first data
+            , String.slice 0 result.startOffset dataValue
+                ++ "LINK"
+                ++ String.slice result.endOffset (String.length dataValue) dataValue
+            )
 
 
 paragraph : SelectionState -> Paragraph -> Html Msg
