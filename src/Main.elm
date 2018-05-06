@@ -5,7 +5,8 @@ import Html.Attributes exposing (..)
 import Html.Events
 import Mouse
 import Json.Decode
-import Json.Decode.Pipeline
+import Paragraph
+import SelectResult
 
 
 port processSelection : String -> Cmd msg
@@ -28,36 +29,15 @@ main =
 -- Model
 
 
-type alias SelectResult =
-    { text : String
-    , id : String
-    , startOffset : Int
-    , endOffset : Int
-    }
-
-
-decoder : Json.Decode.Decoder SelectResult
-decoder =
-    Json.Decode.Pipeline.decode SelectResult
-        |> Json.Decode.Pipeline.required "text" Json.Decode.string
-        |> Json.Decode.Pipeline.required "id" Json.Decode.string
-        |> Json.Decode.Pipeline.required "startOffset" Json.Decode.int
-        |> Json.Decode.Pipeline.required "endOffset" Json.Decode.int
-
-
-type alias Paragraph =
-    ( Int, String )
-
-
 type alias Model =
-    { data : List Paragraph
+    { data : List Paragraph.Paragraph
     , nextId : Int
     , selectionState : SelectionState
     , lastSelectedText : String
     }
 
 
-initData : List Paragraph
+initData : List Paragraph.Paragraph
 initData =
     [ ( 1, "Nulla rhoncus eu justo eget dictum. Praesent scelerisque in orci ut vulputate. Mauris faucibus neque neque, dapibus sollicitudin purus eleifend at. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent sollicitudin facilisis metus tempor ultrices. Integer tincidunt finibus fermentum. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Nullam convallis ante quis turpis consequat facilisis. Suspendisse potenti. Mauris id leo sed velit porttitor fermentum nec ac quam. Phasellus suscipit elit nec ante fermentum condimentum vitae ac justo." )
     , ( 2, "Praesent nisl magna, scelerisque vulputate faucibus at, aliquam eleifend lorem. Nunc lobortis diam sed dictum accumsan. Nulla bibendum aliquet justo, id finibus ipsum. Phasellus turpis justo, dignissim nec finibus at, pellentesque ac metus. Sed leo felis, lobortis non venenatis nec, fringilla et nunc. Ut bibendum mauris pharetra egestas luctus. Duis nec mollis ex. Donec tortor quam, luctus id congue vel, commodo eu dolor. Maecenas tristique, augue et efficitur tempor, tortor nunc lobortis nisi, id faucibus lorem neque ut elit. Nunc purus nunc, porta at massa sit amet, imperdiet ornare leo. Donec dui elit, convallis nec tellus et, dapibus cursus ante. Nam sed felis varius, ultrices lacus ut, rhoncus risus. Sed quis massa diam. Aliquam quis sodales enim. Interdum et malesuada fames ac ante ipsum primis in faucibus." )
@@ -128,7 +108,7 @@ update msg model =
         ProcessSelectionResponse result ->
             let
                 decodeResult =
-                    Json.Decode.decodeString decoder result
+                    Json.Decode.decodeString SelectResult.decoder result
 
                 decodedResult =
                     case decodeResult of
@@ -159,43 +139,49 @@ update msg model =
 -- View
 
 
-addLink : SelectResult -> Paragraph -> Paragraph
-addLink result data =
+addLink : SelectResult.SelectResult -> Paragraph.Paragraph -> Paragraph.Paragraph
+addLink result paragraph =
     let
         dataId =
-            Tuple.first data |> toString
+            Paragraph.id paragraph |> toString
     in
         if dataId == result.id then
-            addLinkText result data
+            addLinkText result paragraph
         else
-            data
+            paragraph
 
 
-addLinkText : SelectResult -> Paragraph -> Paragraph
-addLinkText result data =
+addLinkText : SelectResult.SelectResult -> Paragraph.Paragraph -> Paragraph.Paragraph
+addLinkText result paragraph =
     let
         dataValue =
-            Tuple.second data
+            Paragraph.text paragraph
     in
         if result.startOffset == result.endOffset then
-            data
+            paragraph
         else
-            ( Tuple.first data
-            , String.slice 0 result.startOffset dataValue
-                ++ "LINK"
-                ++ String.slice result.endOffset (String.length dataValue) dataValue
-            )
+            Paragraph.create
+                (Paragraph.id paragraph)
+                (insertText result.startOffset result.endOffset dataValue)
 
 
-paragraph : SelectionState -> Paragraph -> Html Msg
-paragraph selectionState data =
+insertText : Int -> Int -> String -> String
+insertText startOffset endOffset text =
+    (String.slice 0 startOffset text
+        ++ "LINK"
+        ++ String.slice endOffset (String.length text) text
+    )
+
+
+paragraph : SelectionState -> Paragraph.Paragraph -> Html Msg
+paragraph selectionState paragraph =
     p
-        [ id (Tuple.first data |> toString)
+        [ id (Paragraph.id paragraph |> toString)
         , onDown selectionState HandleMouseDown
         , onMove selectionState HandleMouseMove
         , onUp selectionState HandleMouseUp
         ]
-        [ text (Tuple.second data) ]
+        [ text (Paragraph.text paragraph) ]
 
 
 view : Model -> Html Msg
