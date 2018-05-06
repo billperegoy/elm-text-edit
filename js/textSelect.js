@@ -1,9 +1,20 @@
-var elmDiv = document.getElementById('elm-app');
-var app = Elm.Main.embed(elmDiv);
+const DELAY = 0;
 
-app.ports.processSelection.subscribe(function(word) {
-  var text = window.getSelection().toString();
-  setTimeout(function() {
-    app.ports.selectionResponse.send(text);
-  }, 2000);
+const elmDiv = document.getElementById('elm-app');
+const app = Elm.Main.embed(elmDiv);
+
+app.ports.processSelection.subscribe((str) => {
+  const selection = window.getSelection();
+  const range = selection.getRangeAt(0);
+  const text = selection.toString();
+
+  const result = {
+    text: text,
+    startOffset: range.startOffset,
+    endOffset: range.endOffset
+  };
+
+  setTimeout(() => {
+    app.ports.selectionResponse.send(JSON.stringify(result));
+  }, DELAY);
 });
