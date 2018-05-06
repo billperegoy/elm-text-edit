@@ -30,6 +30,7 @@ main =
 
 type alias SelectResult =
     { text : String
+    , id : String
     , startOffset : Int
     , endOffset : Int
     }
@@ -39,6 +40,7 @@ decoder : Json.Decode.Decoder SelectResult
 decoder =
     Json.Decode.Pipeline.decode SelectResult
         |> Json.Decode.Pipeline.required "text" Json.Decode.string
+        |> Json.Decode.Pipeline.required "id" Json.Decode.string
         |> Json.Decode.Pipeline.required "startOffset" Json.Decode.int
         |> Json.Decode.Pipeline.required "endOffset" Json.Decode.int
 
@@ -129,7 +131,7 @@ update msg model =
 
                 effect =
                     if model.selectionState == Selecting then
-                        processSelection "blah"
+                        processSelection ""
                     else
                         Cmd.none
             in
@@ -180,7 +182,8 @@ view : Model -> Html Msg
 view model =
     div []
         [ div
-            [ style
+            [ id "1"
+            , style
                 [ ( "font-size", "24px" )
                 , ( "border", "1px solid black" )
                 , ( "width", "800px" )
