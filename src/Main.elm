@@ -45,21 +45,31 @@ decoder =
         |> Json.Decode.Pipeline.required "endOffset" Json.Decode.int
 
 
+type alias Paragraph =
+    ( Int, String )
+
+
 type alias Model =
-    { data : String
+    { data : List Paragraph
+    , nextId : Int
     , selectionState : SelectionState
     , lastSelectedText : String
     }
 
 
-initData : String
+initData : List Paragraph
 initData =
-    "Receiving the top-maul from Starbuck, he advanced towards the main-mast with the hammer uplifted in one hand, exhibiting the gold with the other, and with a high raised voice exclaiming: “Whosoever of ye raises me a white-headed whale with a wrinkled brow and a crooked jaw; whosoever of ye raises me that white-headed whale, with three holes punctured in his starboard fluke—look ye, whosoever of ye raises me that same white whale, he shall have this gold ounce, my boys!”\n\n“Huzza! huzza!” cried the seamen, as with swinging tarpaulins they hailed the act of nailing the gold to the mast.\n\n“It’s a white whale, I say,” resumed Ahab, as he threw down the topmaul: “a white whale. Skin your eyes for him, men; look sharp for white water; if ye see but a bubble, sing out.”\n\nAll this while Tashtego, Daggoo, and Queequeg had looked on with even more intense interest and surprise than the rest, and at the mention of the wrinkled brow and crooked jaw they had started as if each was separately touched by some specific recollection.\n\n“Captain Ahab,” said Tashtego, “that white whale must be the same that some call Moby Dick.”\n\n“Moby Dick?” shouted Ahab. “Do ye know the white whale then, Tash?”\n"
+    [ ( 1, "Nulla rhoncus eu justo eget dictum. Praesent scelerisque in orci ut vulputate. Mauris faucibus neque neque, dapibus sollicitudin purus eleifend at. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Praesent sollicitudin facilisis metus tempor ultrices. Integer tincidunt finibus fermentum. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia Curae; Nullam convallis ante quis turpis consequat facilisis. Suspendisse potenti. Mauris id leo sed velit porttitor fermentum nec ac quam. Phasellus suscipit elit nec ante fermentum condimentum vitae ac justo." )
+    , ( 2, "Praesent nisl magna, scelerisque vulputate faucibus at, aliquam eleifend lorem. Nunc lobortis diam sed dictum accumsan. Nulla bibendum aliquet justo, id finibus ipsum. Phasellus turpis justo, dignissim nec finibus at, pellentesque ac metus. Sed leo felis, lobortis non venenatis nec, fringilla et nunc. Ut bibendum mauris pharetra egestas luctus. Duis nec mollis ex. Donec tortor quam, luctus id congue vel, commodo eu dolor. Maecenas tristique, augue et efficitur tempor, tortor nunc lobortis nisi, id faucibus lorem neque ut elit. Nunc purus nunc, porta at massa sit amet, imperdiet ornare leo. Donec dui elit, convallis nec tellus et, dapibus cursus ante. Nam sed felis varius, ultrices lacus ut, rhoncus risus. Sed quis massa diam. Aliquam quis sodales enim. Interdum et malesuada fames ac ante ipsum primis in faucibus." )
+    , ( 3, "Nulla semper neque a pulvinar rhoncus. Sed blandit quis tortor eu aliquam. Donec volutpat dolor lorem, non convallis nibh laoreet at. Integer ornare dapibus nisl, non feugiat eros. In euismod lacus eget lacinia ornare. Donec consectetur posuere est, ac semper dui efficitur nec. Donec egestas justo vitae lectus aliquet varius. Curabitur aliquam enim elit, et elementum tellus tincidunt quis. Maecenas nibh risus, ultrices aliquam vehicula eget, feugiat sit amet diam. Donec ante velit, dapibus vel semper sit amet, pellentesque non velit. Praesent eget lacus non diam eleifend faucibus a eu justo. Curabitur a ipsum est. Aliquam quis sodales metus. Nam sapien erat, volutpat et ligula id, vehicula semper quam." )
+    , ( 4, "Nam porta odio ac ipsum blandit pretium non sit amet urna. Duis fermentum dui magna, in posuere est posuere ut. Sed congue porttitor turpis, nec egestas nibh elementum non. Mauris ex augue, lobortis ac libero in, blandit consequat nisl. In lectus odio, egestas vel fringilla vestibulum, sagittis eget urna. Sed gravida posuere ex, a molestie elit pretium sit amet. Orci varius natoque penatibus et magnis dis parturient montes, nascetur ridiculus mus. Morbi nunc sapien, gravida quis molestie vel, pretium sed sapien. Suspendisse tellus elit, porta et bibendum nec, ultricies et elit. Interdum et malesuada fames ac ante ipsum primis in faucibus. Pellentesque fringilla nec dui in ultricies. Praesent placerat nulla eu ante ullamcorper, ac rhoncus orci rutrum. Cras tristique eros auctor nibh vehicula placerat. Interdum et malesuada fames ac ante ipsum primis in faucibus. Nam fermentum eu odio non egestas. Nam scelerisque interdum lacus, sit amet elementum tellus." )
+    ]
 
 
 init : ( Model, Cmd Msg )
 init =
     { data = initData
+    , nextId = 5
     , selectionState = NothingSelected
     , lastSelectedText = ""
     }
@@ -89,45 +99,23 @@ update msg model =
         HandleMouseDown event ->
             let
                 newState =
-                    case model.selectionState of
-                        NothingSelected ->
-                            Selecting
-
-                        Selecting ->
-                            Selecting
-
-                        SelectionDone ->
-                            SelectionDone
+                    if model.selectionState == NothingSelected then
+                        Selecting
+                    else
+                        model.selectionState
             in
                 { model | selectionState = newState } ! []
 
         HandleMouseMove event ->
-            let
-                newState =
-                    case model.selectionState of
-                        NothingSelected ->
-                            NothingSelected
-
-                        Selecting ->
-                            Selecting
-
-                        SelectionDone ->
-                            SelectionDone
-            in
-                { model | selectionState = newState } ! []
+            model ! []
 
         HandleMouseUp event ->
             let
                 newState =
-                    case model.selectionState of
-                        NothingSelected ->
-                            NothingSelected
-
-                        Selecting ->
-                            SelectionDone
-
-                        SelectionDone ->
-                            SelectionDone
+                    if model.selectionState == Selecting then
+                        SelectionDone
+                    else
+                        model.selectionState
 
                 effect =
                     if model.selectionState == Selecting then
@@ -144,16 +132,14 @@ update msg model =
 
                 decodedResult =
                     case decodeResult of
-                        Ok x ->
-                            x
+                        Ok res ->
+                            res
 
                         Err _ ->
-                            { text = "", startOffset = 0, endOffset = 0 }
+                            { text = "", id = "", startOffset = 0, endOffset = 0 }
 
                 newData =
-                    String.slice 0 decodedResult.startOffset model.data
-                        ++ "LINK"
-                        ++ String.slice decodedResult.endOffset (String.length model.data) model.data
+                    List.map (addLink decodedResult) model.data
 
                 newState =
                     case model.selectionState of
@@ -178,23 +164,55 @@ update msg model =
 -- View
 
 
+addLink : SelectResult -> Paragraph -> Paragraph
+addLink result data =
+    let
+        dataId =
+            Tuple.first data |> toString
+    in
+        if dataId == result.id then
+            addLinkText result data
+        else
+            data
+
+
+addLinkText : SelectResult -> Paragraph -> Paragraph
+addLinkText result data =
+    let
+        dataValue =
+            Tuple.second data
+    in
+        ( Tuple.first data
+        , String.slice 0 result.startOffset dataValue
+            ++ "LINK"
+            ++ String.slice result.endOffset (String.length dataValue) dataValue
+        )
+
+
+paragraph : SelectionState -> Paragraph -> Html Msg
+paragraph selectionState data =
+    p
+        [ id (Tuple.first data |> toString)
+        , onDown selectionState HandleMouseDown
+        , onMove selectionState HandleMouseMove
+        , onUp selectionState HandleMouseUp
+        ]
+        [ text (Tuple.second data) ]
+
+
 view : Model -> Html Msg
 view model =
     div []
         [ div
-            [ id "1"
-            , style
+            [ style
                 [ ( "font-size", "24px" )
                 , ( "border", "1px solid black" )
                 , ( "width", "800px" )
                 , ( "padding", "5px" )
                 , ( "margin-bottom", "50px" )
                 ]
-            , onDown model.selectionState HandleMouseDown
-            , onMove model.selectionState HandleMouseMove
-            , onUp model.selectionState HandleMouseUp
             ]
-            [ text model.data ]
+            (List.map (paragraph model.selectionState) model.data)
         , div [ style [ ( "font-size", "24px" ) ] ] [ text <| model.lastSelectedText ]
         , div [ style [ ( "font-size", "24px" ) ] ] [ text <| toString model.selectionState ]
         ]
